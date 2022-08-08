@@ -10,7 +10,9 @@
 #define INEXISTING  -1
 
 //
+//
 // Deque Implementation
+//
 //
 
 typedef struct deque_node {
@@ -31,6 +33,26 @@ Deque* deque_constructor() {
     d->end = NULL;
     d->quantity = 0;
     return d;
+}
+
+void pushfirst(Deque *d, int value) {
+
+    Node *new = (Node*) malloc(sizeof(Node));
+    new->value = value;
+
+    if (d->start == NULL) {
+        d->start = new;
+        d->end = new;
+        new->next = NULL;
+        new->prev = NULL;
+    } else {
+        d->start->prev = new;
+        new->next = d->start;
+        new->prev = NULL;
+        d->start = new;
+    }
+
+    d->quantity += 1;
 }
 
 void pushlast(Deque *d, int value) {
@@ -61,13 +83,14 @@ int popfirst(Deque *d) {
         return -1;
     else {
 
-        deleted_node = d->start; // could be q->end since they are essentially the same
+        deleted_node = d->start;
 
         if (d->quantity == 1) {
             d->start = NULL;
             d->end = NULL;
         } else {
             d->start = d->start->next;
+            d->start->prev = NULL;
         }
     }
     
@@ -80,7 +103,35 @@ int popfirst(Deque *d) {
     return value;
 }
 
-void show_queue(Deque *d) {
+int poplast(Deque *d) {
+    Node *deleted_node; 
+    int value;
+
+    if (d->quantity == 0)
+        return -1;
+    else {
+
+        deleted_node = d->end;
+
+        if (d->quantity == 1) {
+            d->start = NULL;
+            d->end = NULL;
+        } else {
+            d->end = d->end->prev;
+            d->end->next = NULL;
+        }
+    }
+    
+    d->quantity -= 1;
+    value = deleted_node->value;
+    deleted_node->next = NULL;
+    deleted_node->prev = NULL;
+    free(deleted_node);
+
+    return value;
+}
+
+void show_deque(Deque *d) {
     printf("showing deque: ");
     for (Node *n = d->start; n != NULL; n = n->next) {
         printf("%d ", n->value);
@@ -101,7 +152,9 @@ int isempty(Deque *d) {
 }
 
 //
+//
 // Graph Implementation
+//
 //
 
 typedef struct edge {
