@@ -10,90 +10,94 @@
 #define INEXISTING  -1
 
 //
-// Queue Implementation
+// Deque Implementation
 //
 
-typedef struct queue_node {
-    struct queue_node *next;
+typedef struct deque_node {
+    struct deque_node *next;
+    struct deque_node *prev;
     int value;
 } Node;
 
-typedef struct queue {
+typedef struct deque {
     Node *start;
     Node *end;
     int quantity;
-} Queue;
+} Deque;
 
-Queue* queue_constructor() {
-    Queue *q = (Queue*) malloc(sizeof(Queue));
-    q->start = NULL;
-    q->end = NULL;
-    q->quantity = 0;
-    return q;
+Deque* deque_constructor() {
+    Deque *d = (Deque*) malloc(sizeof(Deque));
+    d->start = NULL;
+    d->end = NULL;
+    d->quantity = 0;
+    return d;
 }
 
-void enqueue(Queue *q, int value) {
+void pushlast(Deque *d, int value) {
 
     Node *new = (Node*) malloc(sizeof(Node));
     new->value = value;
 
-    if (q->start == NULL) {
-        q->start = new;
-        q->end = new;
+    if (d->start == NULL) {
+        d->start = new;
+        d->end = new;
         new->next = NULL;
+        new->prev = NULL;
     } else {
-        q->end->next = new;
+        d->end->next = new;
         new->next = NULL;
-        q->end = new;
+        new->prev = d->end;
+        d->end = new;
     }
 
-    q->quantity += 1;
+    d->quantity += 1;
 }
 
-int dequeue(Queue *q) {
+int popfirst(Deque *d) {
     Node *deleted_node; 
     int value;
 
-    if (q->quantity == 0)
+    if (d->quantity == 0)
         return -1;
     else {
 
-        deleted_node = q->start; // could be q->end since they are essentially the same
+        deleted_node = d->start; // could be q->end since they are essentially the same
 
-        if (q->quantity == 1) {
-            q->start = NULL;
-            q->end = NULL;
+        if (d->quantity == 1) {
+            d->start = NULL;
+            d->end = NULL;
         } else {
-            q->start = q->start->next;
+            d->start = d->start->next;
         }
     }
     
-    q->quantity -= 1;
+    d->quantity -= 1;
     value = deleted_node->value;
     deleted_node->next = NULL;
+    deleted_node->prev = NULL;
     free(deleted_node);
 
     return value;
 }
 
-void show_queue(Queue *q) {
+void show_queue(Deque *d) {
     printf("showing deque: ");
-    for (Node *n = q->start; n != NULL; n = n->next) {
+    for (Node *n = d->start; n != NULL; n = n->next) {
         printf("%d ", n->value);
     }
     printf("\n");
 }
 
-void deallocate_queue(Queue *q) {
-    while (q->start != NULL) {
-        Node *temp = q->start;
-        q->start = q->start->next;
+void deallocate_deque(Deque *d) {
+    while (d->start != NULL) {
+        Node *temp = d->start;
+        d->start = d->start->next;
         free(temp);
     }
 }
 
-int isempty(Queue *q) {
-    return (q->quantity == 0);
+int isempty(Deque *d) {
+    return (d->quantity == 0);
 }
 
 //
@@ -209,13 +213,13 @@ void bfs(Graph *g, int start) {
     g->distance[start] = 0;
     g->predecessor[start] = -1;
 
-    Queue *q = queue_constructor();
+    Deque *d = deque_constructor();
     int vertex;
-    enqueue(q, start);
+    pushlast(d, start);
 
-    while (!isempty(q)) {
+    while (!isempty(d)) {
 
-        int u = dequeue(q);
+        int u = popfirst(d);
 
         for (Edge *v = g->adj[u]; v != NULL; v = v->next) {
 
@@ -225,14 +229,14 @@ void bfs(Graph *g, int start) {
                 g->color[vertex] = 'g';
                 g->distance[vertex] = g->distance[u] + 1;
                 g->predecessor[vertex] = u;
-                enqueue(q, vertex);
+                pushlast(d, vertex);
             }
         }
 
         g->color[u] = 'b';
     }
 
-    deallocate_queue(q);
+    deallocate_deque(d);
 }
 
 
