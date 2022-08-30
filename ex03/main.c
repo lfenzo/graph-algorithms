@@ -1,5 +1,5 @@
 /* 
- * Exercicio de implementação (Busca em Profundidade)
+ * Exercicio de implementação (Árvore Geradora Mínima)
  * Nome: Enzo Laragnoit Fernandes
  *
  */
@@ -342,17 +342,42 @@ void topsort(Graph *g, int start) {
     // starts the dfs at the specified node
     _topsort(g, start, &time, stack);
 
-    for (int i = 0; i < g->n_vertices; i++) {
+    for (int i = 0; i < g->n_vertices; i++)
         if (g->color[i] == 'w') {
             _topsort(g, i, &time, stack);
+
+    for (int i = 0; i < g->n_vertices; i++)
+        g->topsort[i] = poplast(stack); // if the stack is empty -1 will be returned
+
+    deallocate_deque(stack);
+}
+
+int max_weight_vertex(int *Q, int *weights, int length) {
+    int max = -INFINITY;
+    int max_index = -1;
+
+    for (int v = 0; v < length; v++) {
+        if ((Q[v] != 0) && (weights[v] > max)) {
+            max = weights[v];
+            max_index = v;
         }
     }
 
-    for (int i = 0; i < g->n_vertices; i++) {
-        g->topsort[i] = poplast(stack); // if the stack is empty -1 will be returned
+    return max_index;
+}
+
+int min_weight_vertex(int *Q, int *weights, int length) {
+    int min = INFINITY;
+    int min_index = -1;
+
+    for (int v = 0; v < length; v++) {
+        if ((Q[v] != 0) && (weights[v] < min)) {
+            min = weights[v];
+            min_index = v;
+        }
     }
 
-    deallocate_deque(stack);
+    return min_index;
 }
 
 int any_occurrence(int *v, int length, int value) {
@@ -362,53 +387,98 @@ int any_occurrence(int *v, int length, int value) {
     return false;
 }
 
-int has_edge(Graph *g, int u, int v) {
-    for (Edge *e = g->adj[u]; e != NULL; e = e->next)
-        if (e->value == v)
-            return true;
-    return false;
+int prim(Graph *g, int root) {
+    g->predecessor = (int*) malloc(sizeof(int) * g->n_vertices);
+    
+    int *Q = (int*) malloc(sizeof(int) * g->n_vertices);
+    int *weight = (int*) malloc(sizeof(int*) * g->n_vertices);
+    int spanning_tree_weight = 0;
+
+    for (int i = 0; i < g->n_vertices; i++) {
+        Q[i] = 1;
+        g->predecessor[i] = INEXISTING;
+        weight[i] = -INFINITY;
+    }
+
+    weight[root] = 0;
+
+    while (any_occurrence(Q, g->n_vertices, 1)) {
+
+        int u = max_weight_vertex(Q, weight, g->n_vertices);
+        Q[u] = 0;
+        spanning_tree_weight += weight[u];
+
+        for (Edge *e = g->adj[u]; e != NULL; e = e->next) {
+            if ((Q[e->value] == 1) && (weight[e->value] < e->weight)) {
+                weight[e->value] = e->weight;
+                g->predecessor[e->value] = u;
+            }
+        }
+    }
+
+    return spanning_tree_weight;
 }
 
-int check_answer(Graph *g) {
 
-    // topsort has at least one INEXISTING value, so the graph is not connected, return false
-    if (any_occurrence(g->topsort, g->n_vertices, INEXISTING))
-        return false;
+void process_answer(Graph *g) {
+    int *vertices = (int*) malloc(sizeof(int) * g->n_vertices);
+    int *predecessor = (int*) malloc(sizeof(int) * g->n_vertices); 
+    int tmp;
 
-    // check if there exists an edge between each one of the nodes in the topological sort
+    // copying the arrays to temporary storage
+    for (int i = 0; i < g->n_vertices; i++) {
+        predecessor[i] = g->predecessor[i];
+        vertices[i] = i;
+    }
+
+    // sorting the edge orientations (u, U) such that u < U forall edges
+    for (int i = 0; i < g->n_vertices; i++) {
+        if (vertices[i] > predecessor[i]) {
+            tmp = vertices[i];
+            vertices[i] = predecessor[i];
+            predecessor[i] = tmp;
+        }
+    }
+
+    for (int i = 0; i < g->n_vertices; i++) {
+        for (int j = 0; j < g->n_vertices; j++) {
+            if (vertices[i] < vertices[j] ||
+                    (vertices[i] == vertices[j] && predecessor[i] < predecessor[j])) {
+                tmp = vertices[i];
+                vertices[i] = vertices[j];
+                vertices[j] = tmp;
+
+                tmp = predecessor[i];
+                predecessor[i] = predecessor[j];
+                predecessor[j] = tmp;
+            }
+        }
+    }
+
+    // printing the anwer to the stdout
     for (int i = 1; i < g->n_vertices; i++)
-        if (!has_edge(g, g->topsort[i - 1], g->topsort[i]))
-            return false;
-
-    return true;
-}
+        printf("%d %d\n", vertices[i], predecessor[i]);
+} 
 
 
 int main() {
     
     int n_edges, n_vertices;
-    int src, dst;
+    int src, dst, weight;
 
     scanf("%i %i", &n_vertices, &n_edges);
 
     Graph *g = graph_constructor(n_vertices, n_edges);
 
     for (int i = 0; i < n_edges; i++) {
-        scanf("%i %i", &src, &dst);
-        insert_edge(g, src, dst, 1);
+        scanf("%i %i %i", &src, &dst, &weight);
+        insert_edge(g, src, dst, weight);
+        insert_edge(g, dst, src, weight);
     }
 
-    topsort(g, 0);
-    
-    if (!check_answer(g))
-        printf("Nao possui.\n");
-    else {
+    prim(g, 0);
 
-        for (int i = 0; i < g->n_vertices; i++)
-            printf("%d ", g->topsort[i]);
-
-        printf("\n");
-    }
+    process_answer(g);
 
     deallocate_graph(g);
 
