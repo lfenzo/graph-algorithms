@@ -1,5 +1,5 @@
 /* 
- * Exercicio de implementação (Árvore Geradora Mínima)
+ * Exercicio de implementaÃ§Ã£o (Ã�rvore Geradora MÃ­nima)
  * Nome: Enzo Laragnoit Fernandes
  *
  */
@@ -342,12 +342,15 @@ void topsort(Graph *g, int start) {
     // starts the dfs at the specified node
     _topsort(g, start, &time, stack);
 
-    for (int i = 0; i < g->n_vertices; i++)
+    for (int i = 0; i < g->n_vertices; i++) {
         if (g->color[i] == 'w') {
             _topsort(g, i, &time, stack);
+        }
+    }
 
-    for (int i = 0; i < g->n_vertices; i++)
+    for (int i = 0; i < g->n_vertices; i++) {
         g->topsort[i] = poplast(stack); // if the stack is empty -1 will be returned
+    }
 
     deallocate_deque(stack);
 }
